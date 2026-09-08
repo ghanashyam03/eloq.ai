@@ -1,0 +1,92 @@
+{
+  "metadata": {
+    "provider": "local-ollama",
+    "model": "llama3.2:1b",
+    "promptVersion": "english-analysis.v1",
+    "benchmarkVersion": "v2",
+    "timestamp": "2026-09-08T02:02:55.176Z",
+    "temperature": 0.1,
+    "maxRequestsCap": 50,
+    "totalRequestsMade": 1,
+    "stoppedOnFailure": true,
+    "stopReason": "Local Ollama Provider failed on test case TC-01: ECONNREFUSED connecting to http://localhost:11434/v1"
+  },
+  "metrics": {
+    "totalCases": 30,
+    "passedCases": 0,
+    "failedCases": 1,
+    "accuracy": 0,
+    "precision": 0,
+    "recall": 0,
+    "f1Score": 0,
+    "falsePositiveRate": 0,
+    "falseNegativeRate": 1,
+    "classificationAccuracy": 0,
+    "schemaValidityRate": 0,
+    "avgLatencyMs": 1008,
+    "medianLatencyMs": 1008,
+    "maxLatencyMs": 1008
+  },
+  "confidenceCalibration": {
+    "0.0-0.2": {
+      "count": 1,
+      "correctCount": 0,
+      "accuracy": 0
+    },
+    "0.2-0.4": {
+      "count": 0,
+      "correctCount": 0,
+      "accuracy": 0
+    },
+    "0.4-0.6": {
+      "count": 0,
+      "correctCount": 0,
+      "accuracy": 0
+    },
+    "0.6-0.8": {
+      "count": 0,
+      "correctCount": 0,
+      "accuracy": 0
+    },
+    "0.8-1.0": {
+      "count": 0,
+      "correctCount": 0,
+      "accuracy": 0
+    }
+  },
+  "failureAnalysis": [
+    {
+      "testId": "TC-01",
+      "sentence": "I have went there yesterday.",
+      "expected": "isCorrect=false (grammar_error)",
+      "actual": "isCorrect=false, state=PROVIDER_ERROR, issues=0",
+      "failureCategory": "provider_failure",
+      "confidence": 0,
+      "explanation": "ECONNREFUSED connecting to http://localhost:11434/v1"
+    }
+  ],
+  "caseResults": [
+    {
+      "testCase": {
+        "id": "TC-01",
+        "sentence": "I have went there yesterday.",
+        "expectedClassification": "grammar_error",
+        "expectedIsCorrect": false,
+        "category": "tense",
+        "expectedCorrection": "I went there yesterday.",
+        "shouldSurface": true,
+        "isSpokenStyle": false,
+        "description": "Present perfect with specific past temporal adverb 'yesterday' and incorrect participle 'went'"
+      },
+      "passed": false,
+      "modelIsCorrect": false,
+      "classificationState": "PROVIDER_ERROR",
+      "issueCount": 0,
+      "confidence": 0,
+      "latencyMs": 1008,
+      "explanation": "ECONNREFUSED connecting to http://localhost:11434/v1",
+      "failureCategory": "provider_failure",
+      "errorMessage": "ECONNREFUSED connecting to http://localhost:11434/v1"
+    }
+  ]
+}

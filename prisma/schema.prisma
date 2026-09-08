@@ -1,0 +1,422 @@
+// Complete persistence & domain schema for AI English-Learning Platform
+// Preserves raw evidence (turns, timing, error occurrences, attempts, metrics, events)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// 1. USER & PROFILE PERSISTENCE
+// ==========================================
+
+model User {
+  id                    String                @id @default(uuid())
+  email                 String                @unique
+  name                  String?
+  createdAt             DateTime              @default(now()) @map("created_at")
+  updatedAt             DateTime              @updatedAt @map("updated_at")
+
+  profile               UserProfile?
+  settings              UserSettings?
+  learningGoals         LearningGoal[]
+  conversations         Conversation[]
+  userGrammarSkills     UserGrammarSkill[]
+  userVocabularyItems   UserVocabularyItem[]
+  practiceSessions      PracticeSession[]
+  performanceMetrics    PerformanceMetric[]
+  learningEvents        LearningEvent[]
+  scoreRecords          ScoreRecord[]
+  errorOccurrences      ErrorOccurrence[]
+
+  @@map("users")
+}
+
+model UserSettings {
+  id                String   @id @default(uuid())
+  userId            String   @unique @map("user_id")
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetProficiency String   @default("B2") @map("target_proficiency")
+  preferredVoice    String   @default("en-US-Standard-C") @map("preferred_voice")
+  dailyGoalMinutes  Int      @default(15) @map("daily_goal_minutes")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("user_settings")
+}
+
+model UserProfile {
+  id                      String   @id @default(uuid())
+  userId                  String   @unique @map("user_id")
+  user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetVariety           String   @default("en-US") @map("target_variety")
+  estimatedLevel          String   @default("B1") @map("estimated_level")
+  correctionIntensity     String   @default("medium") @map("correction_intensity")
+  conversationDifficulty  String   @default("intermediate") @map("conversation_difficulty")
+  dailyTargetDurationMins Int      @default(15) @map("daily_target_duration_mins")
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  @@map("user_profiles")
+}
+
+model LearningGoal {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    String   // conversational, academic, professional, interview_prep, pronunciation, vocabulary, writing, fluency
+  description String
+  priority    Int      @default(1)
+  isCompleted Boolean  @default(false) @map("is_completed")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("learning_goals")
+}
+
+// ==========================================
+// 2. CONVERSATION & RAW TURNS
+// ==========================================
+
+model Conversation {
+  id               String             @id @default(uuid())
+  userId           String             @map("user_id")
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mode             String             @default("free_chat") // free_chat, roleplay, guided_exercise, debate
+  difficulty       String             @default("intermediate")
+  goalContext      String?            @map("goal_context")
+  status           String             @default("active") // active, completed, abandoned
+  startedAt        DateTime           @default(now()) @map("started_at")
+  endedAt          DateTime?          @map("ended_at")
+  durationSeconds  Int?               @map("duration_seconds")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  updatedAt        DateTime           @updatedAt @map("updated_at")
+
+  turns            ConversationTurn[]
+  errorOccurrences ErrorOccurrence[]
+  practiceSessions PracticeSession[]
+
+  @@index([userId, startedAt])
+  @@map("conversations")
+}
+
+model ConversationTurn {
+  id               String             @id @default(uuid())
+  conversationId   String             @map("conversation_id")
+  conversation     Conversation       @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  speaker          String             // user, assistant, system
+  turnOrder        Int                @map("turn_order")
+  text             String
+  audioUrl         String?            @map("audio_url")
+  durationSeconds  Float?             @map("duration_seconds")
+  providerMetadata Json?              @map("provider_metadata")
+  createdAt        DateTime           @default(now()) @map("created_at")
+
+  speechSegments   SpeechSegment[]
+  errorOccurrences ErrorOccurrence[]
+  practiceAttempts PracticeAttempt[]
+
+  @@unique([conversationId, turnOrder])
+  @@index([conversationId, turnOrder])
+  @@map("conversation_turns")
+}
+
+model SpeechSegment {
+  id                 String           @id @default(uuid())
+  turnId             String           @map("turn_id")
+  turn               ConversationTurn @relation(fields: [turnId], references: [id], onDelete: Cascade)
+  audioDurationSecs  Float            @map("audio_duration_secs")
+  wordCount          Int              @map("word_count")
+  pauseCount         Int              @default(0) @map("pause_count")
+  totalPauseDurationSecs Float        @default(0) @map("total_pause_duration_secs")
+  sttConfidence      Float?           @map("stt_confidence")
+  timingDetails      Json?            @map("timing_details")
+  createdAt          DateTime         @default(now()) @map("created_at")
+
+  @@index([turnId])
+  @@map("speech_segments")
+}
+
+// ==========================================
+// 3. ERROR DEFINITIONS & EVIDENCE OCCURRENCES
+// ==========================================
+
+model ErrorDefinition {
+  id              String            @id @default(uuid())
+  code            String            @unique // e.g. ARTICLE_MISSING, PREPOSITION_INCORRECT
+  category        String            // grammar, vocabulary, pronunciation, fluency, pragmatics
+  name            String
+  description     String
+  difficulty      String            @default("intermediate")
+  createdAt       DateTime          @default(now()) @map("created_at")
+
+  occurrences     ErrorOccurrence[]
+  practiceExercises PracticeExercise[]
+
+  @@map("error_definitions")
+}
+
+model ErrorOccurrence {
+  id                String            @id @default(uuid())
+  userId            String            @map("user_id")
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  errorDefinitionId String            @map("error_definition_id")
+  errorDefinition   ErrorDefinition   @relation(fields: [errorDefinitionId], references: [id], onDelete: Restrict)
+  conversationId    String?           @map("conversation_id")
+  conversation      Conversation?     @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  turnId            String?           @map("turn_id")
+  turn              ConversationTurn? @relation(fields: [turnId], references: [id], onDelete: SetNull)
+  originalText      String            @map("original_text")
+  correctedText     String            @map("corrected_text")
+  explanation       String
+  category          String
+  severity          String            @default("medium") // low, medium, high
+  confidence        Float             @default(1.0)
+  createdAt         DateTime          @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@index([userId, errorDefinitionId])
+  @@map("error_occurrences")
+}
+
+// ==========================================
+// 4. GRAMMAR TAXONOMY & USER MASTERY
+// ==========================================
+
+model GrammarSkill {
+  id                String             @id @default(uuid())
+  code              String             @unique // e.g. PRESENT_PERFECT, THIRD_PERSON_SINGULAR
+  category          String             // tenses, articles, clauses, conditionals, prepositions
+  topic             String
+  description       String
+  difficulty        String             @default("intermediate")
+  createdAt         DateTime           @default(now()) @map("created_at")
+
+  userGrammarSkills UserGrammarSkill[]
+  practiceExercises PracticeExercise[]
+
+  @@map("grammar_skills")
+}
+
+model UserGrammarSkill {
+  id               String       @id @default(uuid())
+  userId           String       @map("user_id")
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  grammarSkillId   String       @map("grammar_skill_id")
+  grammarSkill     GrammarSkill @relation(fields: [grammarSkillId], references: [id], onDelete: Cascade)
+  estimatedMastery Float        @default(0.0) @map("estimated_mastery") // 0.0 to 1.0 (0% to 100%)
+  confidence       Float        @default(0.5)
+  totalAttempts    Int          @default(0) @map("total_attempts")
+  successes        Int          @default(0)
+  failures         Int          @default(0)
+  recentPerformance Float       @default(0.0) @map("recent_performance")
+  lastPracticedAt  DateTime?    @map("last_practiced_at")
+  nextReviewAt     DateTime?    @map("next_review_at")
+  createdAt        DateTime     @default(now()) @map("created_at")
+  updatedAt        DateTime     @updatedAt @map("updated_at")
+
+  @@unique([userId, grammarSkillId])
+  @@index([userId, grammarSkillId])
+  @@map("user_grammar_skills")
+}
+
+// ==========================================
+// 5. VOCABULARY DICTIONARY & ACTIVE/PASSIVE TRACKING
+// ==========================================
+
+model VocabularyItem {
+  id                   String               @id @default(uuid())
+  word                 String               @unique
+  lemma                String?
+  definition           String
+  partOfSpeech         String               @map("part_of_speech") // noun, verb, adjective, adverb, idiom, phrasal_verb
+  pronunciation        String?
+  ipa                  String?
+  register             String               @default("neutral") // formal, informal, slang, academic, neutral
+  difficulty           String               @default("intermediate")
+  collocations         Json?
+  synonyms             Json?
+  antonyms             Json?
+  exampleSentences     Json?                @map("example_sentences")
+  isModelGenerated     Boolean              @default(true) @map("is_model_generated")
+  createdAt            DateTime             @default(now()) @map("created_at")
+
+  userVocabularyItems  UserVocabularyItem[]
+  practiceExercises    PracticeExercise[]
+
+  @@map("vocabulary_items")
+}
+
+model UserVocabularyItem {
+  id                       String         @id @default(uuid())
+  userId                   String         @map("user_id")
+  user                     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vocabularyItemId         String         @map("vocabulary_item_id")
+  vocabularyItem           VocabularyItem @relation(fields: [vocabularyItemId], references: [id], onDelete: Cascade)
+  timesEncountered         Int            @default(0) @map("times_encountered")
+  timesCorrectlyRecognized Int            @default(0) @map("times_correctly_recognized")
+  timesSuccessfullyProduced Int           @default(0) @map("times_successfully_produced")
+  timesMisused             Int            @default(0) @map("times_misused")
+  recalledCount            Int            @default(0) @map("recalled_count")
+  naturalUsageCount        Int            @default(0) @map("natural_usage_count")
+  correctProductionCount   Int            @default(0) @map("correct_production_count")
+  incorrectProductionCount Int            @default(0) @map("incorrect_production_count")
+  srsIntervalDays          Int            @default(1) @map("srs_interval_days")
+  easeFactor               Float          @default(2.5) @map("ease_factor")
+  consecutiveSuccesses     Int            @default(0) @map("consecutive_successes")
+  mastery                  Float          @default(0.0)
+  confidence               Float          @default(0.5)
+  status                   String         @default("passive") // encountered, recognized, passive, active, mastered
+  lastSeenAt               DateTime?      @map("last_seen_at")
+  lastReviewedAt           DateTime?      @map("last_reviewed_at")
+  nextReviewAt             DateTime?      @map("next_review_at")
+  createdAt                DateTime       @default(now()) @map("created_at")
+  updatedAt                DateTime       @updatedAt @map("updated_at")
+
+  @@unique([userId, vocabularyItemId])
+  @@index([userId, vocabularyItemId])
+  @@index([userId, status])
+  @@map("user_vocabulary_items")
+}
+
+// ==========================================
+// 6. PRACTICE SESSIONS & ATTEMPTS
+// ==========================================
+
+model PracticeSession {
+  id               String            @id @default(uuid())
+  userId           String            @map("user_id")
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversationId   String?           @map("conversation_id")
+  conversation     Conversation?     @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  title            String
+  focusArea        String            @map("focus_area") // grammar, vocabulary, pronunciation, fluency
+  status           String            @default("in_progress") // in_progress, completed, abandoned
+  startedAt        DateTime          @default(now()) @map("started_at")
+  completedAt      DateTime?         @map("completed_at")
+  createdAt        DateTime          @default(now()) @map("created_at")
+
+  attempts         PracticeAttempt[]
+
+  @@index([userId, startedAt])
+  @@map("practice_sessions")
+}
+
+model PracticeExercise {
+  id                 String           @id @default(uuid())
+  title              String
+  exerciseType       String           @map("exercise_type") // correction, fill_blank, sentence_creation, vocabulary_production, speaking_prompt, grammar_transformation, contextual_usage, multiple_choice
+  progressionStage   String           @default("controlled_production") @map("progression_stage") // recognition, controlled_production, guided_production, spontaneous_production, real_conversation
+  targetSkillType    String           @default("error") @map("target_skill_type") // error, grammar, vocabulary, pronunciation, speaking
+  targetCategory     String           @map("target_category")
+  instructions       String
+  promptText         String           @map("prompt_text")
+  expectedAnswer     String           @map("expected_answer")
+  selectionReason    String?          @map("selection_reason")
+  learningObjective  String?          @map("learning_objective")
+  options            Json?
+  difficulty         String           @default("intermediate")
+  grammarSkillId     String?          @map("grammar_skill_id")
+  grammarSkill       GrammarSkill?    @relation(fields: [grammarSkillId], references: [id], onDelete: SetNull)
+  vocabularyItemId   String?          @map("vocabulary_item_id")
+  vocabularyItem     VocabularyItem?  @relation(fields: [vocabularyItemId], references: [id], onDelete: SetNull)
+  errorDefinitionId  String?          @map("error_definition_id")
+  errorDefinition    ErrorDefinition? @relation(fields: [errorDefinitionId], references: [id], onDelete: SetNull)
+  createdAt          DateTime         @default(now()) @map("created_at")
+
+  attempts           PracticeAttempt[]
+
+  @@map("practice_exercises")
+}
+
+model PracticeAttempt {
+  id                 String           @id @default(uuid())
+  practiceSessionId  String           @map("practice_session_id")
+  practiceSession    PracticeSession  @relation(fields: [practiceSessionId], references: [id], onDelete: Cascade)
+  exerciseId         String           @map("exercise_id")
+  exercise           PracticeExercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  turnId             String?          @map("turn_id")
+  turn               ConversationTurn? @relation(fields: [turnId], references: [id], onDelete: SetNull)
+  userResponse       String           @map("user_response")
+  isCorrect          Boolean          @map("is_correct")
+  feedback           String
+  score              Float            @default(0.0)
+  createdAt          DateTime         @default(now()) @map("created_at")
+
+  @@index([practiceSessionId])
+  @@map("practice_attempts")
+}
+
+// ==========================================
+// 7. RAW PERFORMANCE METRICS
+// ==========================================
+
+model PerformanceMetric {
+  id                    String   @id @default(uuid())
+  userId                String   @map("user_id")
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wordsPerMinute        Float    @map("words_per_minute")
+  fillerCount           Int      @default(0) @map("filler_count")
+  pauseCount            Int      @default(0) @map("pause_count")
+  totalPauseDurationSecs Float   @default(0) @map("total_pause_duration_secs")
+  vocabularyDiversity   Float    @map("vocabulary_diversity") // Type-Token Ratio
+  avgSentenceLength     Float    @map("avg_sentence_length")
+  errorFrequencyRate    Float    @map("error_frequency_rate")
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@map("performance_metrics")
+}
+
+// ==========================================
+// 8. IMMUTABLE LEARNING EVENTS
+// ==========================================
+
+model LearningEvent {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eventType   String   @map("event_type") // mistake_detected, word_encountered, word_recalled, exercise_passed, conversation_completed
+  entityType  String   @map("entity_type") // conversation, turn, error, vocabulary, grammar
+  entityId    String   @map("entity_id")
+  payload     Json
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@map("learning_events")
+}
+
+// ==========================================
+// 9. MULTI-DIMENSIONAL SCORE RECORDS
+// ==========================================
+
+model ScoreRecord {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dimension     String   // grammar, vocabulary, fluency, naturalness, pronunciation, coherence, listening, writing
+  value         Float    // 0.0 to 100.0
+  evidenceCount Int      @default(1) @map("evidence_count")
+  confidence    Float    @default(0.8)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@map("score_records")
+}
+
+// ==========================================
+// 10. APP METADATA
+// ==========================================
+
+model AppMetadata {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("app_metadata")
+}
