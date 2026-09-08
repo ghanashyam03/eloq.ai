@@ -1,62 +1,65 @@
-# Eloq AI - Intelligent Real-Time English Fluency & Voice Engine
+# Eloq AI — Real-Time English Fluency & Spoken Mastery Engine
 
-**Eloq AI** is a state-of-the-art, evidence-backed AI English fluency and voice speaking platform built on **Next.js 16 (App Router & Turbopack)**, **TypeScript**, and **Prisma**. It delivers a real-time, interruptible voice speaking experience, multi-mode scenario simulations, adaptive weakness profiling, active vocabulary spaced repetition (SuperMemo-2), and long-term linguistic analytics.
+Eloq AI is an advanced, evidence-backed AI platform designed to transform passive English knowledge into spontaneous, high-stakes spoken fluency.
 
----
-
-## ✨ Key Subsystems & Architecture
-
-### 1. 🎙️ Real-Time Interruptible Voice Engine
-- **Finite State Machine (FSM):** Explicit state management handling human barge-in interruptions across states: `RECORDING` → `TRANSCRIBING` → `THINKING` → `SPEAKING` → `INTERRUPTED`.
-- **Keyboard Shortcuts:** Hold or toggle <kbd>Space</kbd> to record, press <kbd>Esc</kbd> to immediately barge-in and interrupt AI playback.
-- **Sub-Second Telemetry:** Integrated STT (Whisper/Mock) and TTS (Google/Mock) provider abstractions designed for sub-second turn latency.
-
-### 2. ⚡ Risk-Aware & Free-Only LLM Model Router
-- **Multi-Provider Resilience:** Unified router supporting HuggingFace, Cerebras, Groq, Gemini, OpenRouter, and local fallback implementations.
-- **Strict Free-Only Safety (`FREE_ONLY_MODE=true`):** Prevents unexpected paid API usage by failing gracefully or falling back to free provider tiers.
-- **Risk Taxonomy Gating:** Critical tasks (e.g. grammar analysis) require strict linguistic verifier pass, while low-risk tasks utilize high-throughput free models.
-
-### 3. 🎭 High-Stakes Simulation Scenarios
-Supports 6 distinct real-world conversational modes:
-- 💬 **Free Conversation:** Open-ended natural dialogue with adaptive real-time feedback.
-- 💼 **Job Interview Simulation:** Behavioral and technical interview practice under realistic evaluator pressure.
-- ⚖️ **Debate & Persuasion:** AI adopts a strict opposing stance to challenge your argumentation and spontaneous fluency.
-- 👔 **Executive Briefing:** Professional workplace scenarios, stakeholder Q&A, and business communication.
-- 🎓 **Academic Seminar:** Conceptual discussions requiring precise academic vocabulary and structured logic.
-- 🎭 **Immersive Roleplay:** Everyday situational practice across real-world contexts.
-
-### 4. 🧠 Weakness Intelligence & SuperMemo-2 SRS
-- **Pattern Normalization:** Categorizes surface speech mistakes into root signature patterns (e.g. preposition misuse, tense shifting, article omission).
-- **Active Vocabulary Conversion:** Manages passive-to-active vocabulary conversion with the **SuperMemo-2 (SM-2)** Spaced Repetition algorithm.
-
-### 5. 📊 Long-Term Progress & Skill Transfer Intelligence
-- **10 Performance Dimensions:** Tracks metrics including speech rate (WPM), Type-Token Ratio (TTR), filler word frequency, pause frequency, and grammatical accuracy.
-- **Skill Transfer Detection:** Monitors whether improvements in controlled practice successfully transfer into spontaneous, unscripted speaking sessions.
-
-### 6. 🔒 Audio Privacy & Cost Safeguards
-- **Audio Privacy Cleaner:** In-memory audio buffer sanitization with automatic redaction of raw audio binaries from application logs.
-- **Idempotency & Rate Limiter:** Built-in safeguards against duplicate turns and runaway API consumption.
-- **Data Deletion Service:** Relational cascading user data deletion (`purgeCompleteUserData`).
+Unlike conventional language-learning applications that rely on static flashcards or basic chatbot prompts, Eloq AI operates as an intelligent voice coach. It integrates a real-time interruptible speaking engine, multi-mode simulation scenarios, deterministic error profiling, spaced repetition active vocabulary scheduling, and long-term skill transfer analytics.
 
 ---
 
-## 🎨 Minimalist Frontend Philosophy
+## 🏛️ System Architecture & Subsystems
 
-Eloq AI is designed around **strict minimalism**:
-- **Zero Clutter:** Unnecessary developer diagnostic matrices and telemetry panels are removed from the main view to keep user focus on voice practice.
-- **Distraction-Free Workspace:** Sleek dark-mode aesthetic with refined glassmorphism, responsive typography, and tactile status indicators.
-- **Collapsible Feedback:** Grammar corrections and linguistic insights appear as clean, unobtrusive cards only when suggestions exist.
+### 🎙️ 1. Real-Time Speech Pipeline & Interruption State Machine
+The core speaking experience is driven by an explicit **Finite State Machine (FSM)** that models natural human conversation dynamics:
+* **Barge-In Interruptibility:** The FSM safely manages transitions across `RECORDING` → `TRANSCRIBING` → `THINKING` → `SPEAKING` → `INTERRUPTED`. If the user interrupts mid-sentence, the AI immediately halts speech output, truncates the audio stream, and begins processing the user's new turn.
+* **Low-Latency Telemetry:** Speech-to-Text (STT) and Text-to-Speech (TTS) abstractions deliver sub-second latency tracking, capturing precise pause counts, filler words, speech rate (WPM), and articulation metrics without blocking the conversational flow.
 
 ---
 
-## 🚀 Getting Started
+### 🧠 2. Weakness Intelligence & Root Error Normalization
+Rather than storing isolated surface mistakes (e.g., *"I goes to market"*), Eloq AI normalizes error evidence into persistent **Root Weakness Signatures**:
+* **Linguistic Taxonomy:** Categorizes errors into root structural categories (e.g., Subject-Verb Agreement, Preposition Selection, Article Omission, Tense Consistency, Register Inappropriateness).
+* **Confidence Calibration:** Computes a statistical confidence score for each identified weakness based on occurrence frequency, context variety, and time elapsed.
+* **Deterministic-First Analysis:** Evaluates non-structural parameters (speech pace, filler density, hesitation pauses) deterministically without relying on LLM outputs, guaranteeing zero-hallucination metrics.
 
-### 1. Prerequisites
-- Node.js 20+
-- PostgreSQL database (or local instance)
+---
 
-### 2. Environment Setup
-Copy `.env.example` to `.env`:
+### 🗂️ 3. Spaced Repetition (SuperMemo-2) Active Vocabulary Engine
+Eloq AI explicitly distinguishes between **passive vocabulary** (words a user recognizes when reading/listening) and **active vocabulary** (words a user spontaneously uses when speaking):
+* **SuperMemo-2 (SM-2) Scheduling:** Automatically tracks newly encountered vocabulary items and schedules active production exercises based on calculated review intervals ($I$), repetition counts ($n$), and ease factors ($EF$).
+* **Passive-to-Active Conversion:** Formulates real-time prompts that require the user to produce target vocabulary items in context during speaking sessions.
+
+---
+
+### 🎭 4. Adaptive Scenario & Simulation Engine
+The platform simulates real-world, high-stakes communication environments through 6 distinct operational modes:
+* **💬 Free Conversation:** Open dialogue with continuous, real-time linguistic feedback.
+* **💼 Job Interview Simulation:** Behavioral and technical interview scenarios with interviewer follow-ups, challenge questions, and structured response evaluations.
+* **⚖️ Debate & Persuasion:** The AI assumes a strict opposing stance, forcing the user to construct logical counterarguments, defend positions, and maintain fluency under pressure.
+* **👔 Executive Briefing:** Workplace scenarios requiring concise, high-level stakeholder communication, executive phrasing, and professional register.
+* **🎓 Academic Seminar:** Analytical discussions requiring precise conceptual vocabulary and formal discourse markers.
+* **🎭 Immersive Roleplay:** Real-world situational practice tailored to everyday environments.
+
+---
+
+### 📊 5. Long-Term Analytics & Skill Transfer Intelligence
+Eloq AI monitors long-term progress across **10 performance dimensions** to measure true fluency growth:
+* **Performance Metric Suite:** Tracks speech rate (Words Per Minute), Type-Token Ratio (Vocabulary Diversity), Pause Frequency, Filler Word Rate, and Grammatical Accuracy.
+* **Skill Transfer Detection:** Specifically measures whether vocabulary and grammar rules mastered in controlled practice exercises successfully transfer into unscripted, spontaneous speaking scenarios.
+* **Anomaly & Failure Filtering:** Automatically screens out session anomalies (e.g., mic dropouts, single-word turns) to protect long-term progress trends from score corruption.
+
+---
+
+### ⚡ 6. Risk-Aware Provider Router & Resilience Architecture
+To guarantee maximum uptime and zero unexpected operating costs:
+* **Task-Risk Taxonomy:** Classifies operations into risk tiers (CRITICAL, HIGH, MEDIUM, LOW, DETERMINISTIC). High-risk tasks (e.g. grammar feedback) pass through strict verifier gates, while low-risk tasks utilize high-throughput free models.
+* **Free-First Enforcement (`FREE_ONLY_MODE=true`):** Multi-provider routing architecture supporting HuggingFace, Cerebras, Groq, Gemini, OpenRouter, and local fallbacks. If external providers are unavailable, the system safely falls back without interrupting the user session.
+* **Audio Privacy & Safety:** In-memory audio buffers are zeroed out immediately after processing, redacting raw audio binaries from system logs.
+
+---
+
+## 🛠️ Setup & Operations
+
+### Environment Configuration (`.env`)
 
 ```env
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/eloq_ai_dev"
@@ -65,42 +68,23 @@ PRIMARY_LLM_PROVIDER="gemini"
 FALLBACK_LLM_PROVIDER="cerebras"
 ```
 
-### 3. Installation & Database Migration
+### Installation & Test Suite Execution
 
 ```bash
 # 1. Install dependencies
 npm install
 
-# 2. Generate Prisma Client & Run Migrations
+# 2. Database migration & Prisma setup
 npx prisma generate
 npx prisma db push
 
-# 3. Verify TypeScript types
+# 3. Typecheck, Lint & Full Test Suite (209 unit & integration tests)
 npm run typecheck
-
-# 4. Run Linter
 npm run lint
-
-# 5. Run Test Suite (100% passing tests)
 npm run test
-
-# 6. Start Development Server
-npm run dev
 ```
-
-The application will be running at [http://localhost:3000](http://localhost:3000).
-
----
-
-## 🧪 Verification & Testing Commands
-
-- `npm run test`: Runs unit & integration tests (177 tests covering AI router, voice state machine, SRS engine, progress analytics).
-- `npm run typecheck`: Validates full strict TypeScript typing.
-- `npm run lint`: Verifies ESLint zero-warning policy.
-- `npm run build`: Compiles production Next.js build.
 
 ---
 
 ## 📄 License
-
-MIT License. Designed with excellence for speech mastery and linguistic fluency.
+MIT License. Built for speech mastery, linguistic precision, and spontaneous fluency.
