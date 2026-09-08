@@ -65,7 +65,7 @@ export default function Home() {
 
   const handleModeChange = (modeId: SimulationMode) => {
     setSelectedMode(modeId);
-    setConversationId(`conv-eloq-${modeId}-${Date.now()}`);
+    setConversationId(`conv-eloq-${modeId}`);
   };
 
   return (

@@ -11,8 +11,6 @@
     "test": "vitest run",
     "test:mock": "vitest run",
     "test:live-ai": "npx tsx scripts/test-live-ai.ts",
-    "benchmark:nvidia": "npx tsx scripts/benchmark-nvidia.ts",
-    "benchmark:ollama": "npx tsx scripts/benchmark-ollama.ts",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "db:generate": "prisma generate",
